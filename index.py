@@ -8,8 +8,7 @@ url = "https://jsearch.p.rapidapi.com/search"
 querystring = {"query":"Python developer in Texas, USA","page":"1","num_pages":"1"}
 
 headers = {
-	"X-RapidAPI-Key": "8dd97f9a7bmsha35d1101398dd53p11ea69jsnda918192f712",
-	"X-RapidAPI-Host": "jsearch.p.rapidapi.com"
+	
 }
 
 response = requests.get(url, headers=headers, params=querystring)
