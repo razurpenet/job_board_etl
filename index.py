@@ -149,35 +149,34 @@ def write_to_transformed_s3():
                             'job_description', 'job_city', 'job_country', 
                             'job_posted_at_timestamp', 'employer_company_type']]
     #write the transformed data to csv
-    #transformed_col = transformed_column.to_csv('transformed_us_de_jobs.csv', index=False)
+    
     #Data Cleaning
     df = transformed_column.copy()
     new_transformed = df.drop_duplicates()
-    #Check Datatype pf the columns
+    #Check Datatype of the columns
     #new_transformed = df.info()
+
     #Dealing with timestamp (UNIX)
     new_transformed['job_posted_at_timestamp'] = (new_transformed['job_posted_at_timestamp']
                                                   .convert_dtypes(convert_integer=True)).astype(int)
     new_transformed['job_posted_at_timestamp'] = pd.to_datetime(new_transformed['job_posted_at_timestamp'], unit='s')
+    
+    #Save dataframe to csv
+    csv_file_path = 'transformed_us_de_jobs.csv'
+    new_transformed.to_csv(csv_file_path, index=False)
+    #s3 bucket details
+    s3_key = f"transformed-jobs-data/{csv_file_path}"
+    bucket_name = aws_transformedbucket
 
-    print(new_transformed)
+    #Upload the csv file to transformed s3 bucket
+    s3.upload_file(csv_file_path, bucket_name, s3_key)
+    print(f"csv file uploaded successfully to {bucket_name}/{s3_key}")
+
+    #Write it to transformed bucket
+    
 
 write_to_transformed_s3()
     
-
-
-
-#This creates the transformed-jobs-data s3 bucket 
-
-
-        
-
-#
-    
-    #create_transformed_jobs_bucket()
-
-
-
 
 
 
