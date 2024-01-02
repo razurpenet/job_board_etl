@@ -6,7 +6,7 @@ import os
 import boto3
 from datetime import datetime
 from io import StringIO
-from utils.helper import create_bucket
+from utils.helper import does_bucket_exists, create_bucket, create_transformed_jobs_bucket
 
 
 config = configparser.ConfigParser()
@@ -83,18 +83,22 @@ aws_region = config['AWS_ACCESS']['region']
 
 # extract_de_ca_jobs()
 
+#Create s3 client
+s3 = boto3.client('s3', aws_access_key_id=aws_access, aws_secret_access_key=aws_secretkey, region_name=aws_region)
 
 # #create s3 bucket
-# create_bucket()
+if does_bucket_exists(aws_bucketname):
+    pass
+else:
+    create_bucket()
+    #print(f'Bucket-{aws_bucketname} created successfully')
+
 
 
 #Write raw data to s3 bucket
 bucketname = aws_bucketname
 # local_folder = './json_folder'
 # s3_prefix = 'jobboard101/'
-
-#Create s3 client
-s3 = boto3.client('s3', aws_access_key_id=aws_access, aws_secret_access_key=aws_secretkey, region_name=aws_region)
 
 # #iterate through local files
 # for filename in os.listdir(local_folder):
@@ -117,10 +121,15 @@ s3 = boto3.client('s3', aws_access_key_id=aws_access, aws_secret_access_key=aws_
 # print("All JSON files have been successfully uploaded to s3.")
 
 
-#Read from raw data in s3 bucket -jobboard101
+#TRANSFORMATION - Read from raw data in s3 bucket -jobboard101
 
-def read_from_raw_s3():
-
+def write_to_transformed_s3():
+    if does_bucket_exists(aws_transformedbucket):
+        pass
+    else:
+        create_transformed_jobs_bucket()
+    #print(f'Bucket-{aws_transformedbucket} created successfully'))
+    
     s3prefix = 'jobboard101/'
     #List objects in a s3 bucket
     objects = s3.list_objects(Bucket=bucketname, Prefix=s3prefix)
@@ -133,38 +142,41 @@ def read_from_raw_s3():
     job_details = df.get('data')
 
     #write to Dataframe
-
     df = pd.DataFrame(job_details)
-    #df.to_csv(file, index=False)
 
     #Select required column from dataframe
     transformed_column = df[['employer_website', 'job_id', 'job_title', 'job_apply_link', 
                             'job_description', 'job_city', 'job_country', 
                             'job_posted_at_timestamp', 'employer_company_type']]
-    return transformed_column
-#print(transformed_column.head())
+    #write the transformed data to csv
+    #transformed_col = transformed_column.to_csv('transformed_us_de_jobs.csv', index=False)
+    #Data Cleaning
+    df = transformed_column.copy()
+    new_transformed = df.drop_duplicates()
+    #Check Datatype pf the columns
+    #new_transformed = df.info()
+    #Dealing with timestamp (UNIX)
+    new_transformed['job_posted_at_timestamp'] = (new_transformed['job_posted_at_timestamp']
+                                                  .convert_dtypes(convert_integer=True)).astype(int)
+    new_transformed['job_posted_at_timestamp'] = pd.to_datetime(new_transformed['job_posted_at_timestamp'], unit='s')
 
-#Write to transformed_data_s3
+    print(new_transformed)
 
-#write the transformed data to csv
-file = 'transformed_us_de_jobs.csv'
-transformed_column.to_csv()
-
-#Convert the list of dictionary into a dataframe
-
-#Iterate through the list of dictionaries
-# for dictionary in job_details:
-#     #Access the individual dictionaries
-#     for key, value in dictionary.items():
-#         job_details_to_csv = 
-        #print(f"{key}:{value}")
+write_to_transformed_s3()
     
-    # print("---")
-#dataframe = df['data'][]
 
-#print(deef)
 
-#dataframe.to_csv('raw_de_usa_job.csv', index=False)
+
+#This creates the transformed-jobs-data s3 bucket 
+
+
+        
+
+#
+    
+    #create_transformed_jobs_bucket()
+
+
 
 
 
